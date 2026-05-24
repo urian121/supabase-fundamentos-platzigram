@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { getTimeAgo } from "./utils/time";
 import { type Post } from "./mocks/posts";
+import Hearder from "./components/Hearder";
 
 import { supabase } from "./utils/client";
 
@@ -145,13 +146,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-card-bg border-b border-border">
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-center">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            Suplatzigram
-          </h1>
-        </div>
-      </header>
+      <Hearder title="Suplatzigram" />
 
       {/* Feed de posts */}
       <main className="max-w-lg mx-auto px-4 py-6">
