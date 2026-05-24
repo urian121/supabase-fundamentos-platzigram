@@ -5,8 +5,14 @@ import { useState, useEffect } from "react";
 import { getTimeAgo } from "./utils/time";
 import { type Post } from "./mocks/posts";
 import Hearder from "./components/Hearder";
-
+import UserAvatar from "./components/UserAvatar";
 import { supabase } from "./utils/client";
+import HomeSkeleton from "./components/skeletons/HomeSkeleton";
+
+interface ApiUser {
+  name: string;
+  avatar_url: string;
+}
 
 function HeartIcon({ filled }: { filled: boolean }) {
   if (filled) {
@@ -41,53 +47,42 @@ function HeartIcon({ filled }: { filled: boolean }) {
 
 function PostCard({
   post,
+  fallbackUser,
   onLike,
 }: {
   post: Post;
+  fallbackUser: ApiUser;
   onLike: (id: number | string) => void;
 }) {
+  const displayName   = post.user?.username || fallbackUser.name;
+  const displayAvatar = post.user?.avatar   || fallbackUser.avatar_url;
+
   return (
-    <article className="bg-card-bg border border-border rounded-xl overflow-hidden shadow-sm">
-      {/* Header con usuario y avatar */}
+    <article className="bg-card-bg overflow-hidden">
       <div className="flex items-center gap-3 p-4">
-        <div className="relative w-10 h-10 rounded-full overflow-hidden ring-2 ring-primary">
-          <Image
-            src={
-              post.user?.avatar ||
-              "https://xynshcnkxdliapebmyaz.supabase.co/storage/v1/object/public/images/posts/unnamed-14.jpg"
-            }
-            alt={post.user?.username || "default_user"}
-            fill
-            className="object-cover"
-          />
-        </div>
+        <UserAvatar src={displayAvatar} username={displayName} />
         <div className="flex flex-col">
-          <span className="font-semibold text-foreground">
-            {post.user?.username || "default_user"}
-          </span>
+          <span className="font-semibold text-foreground">{displayName}</span>
           <span className="text-xs text-foreground/50">
             {getTimeAgo(new Date(post.created_at))}
           </span>
         </div>
       </div>
 
-      {/* Imagen del post */}
       <div className="relative w-full aspect-square">
         <Image
           src={post.image_url}
-          alt={`Post de ${post.user?.username || "default_user"}`}
+          alt={`Post de ${displayName}`}
           fill
           className="object-cover"
         />
       </div>
 
-      {/* Acciones y caption */}
       <div className="p-4">
-        {/* Botón de like con contador */}
         <div className="flex items-center gap-2">
           <button
             onClick={() => onLike(post.id)}
-            className="hover:scale-110 transition-transform active:scale-95"
+            className="hover:scale-110 transition-transform active:scale-95 hover:cursor-pointer"
             aria-label={post.isLiked ? "Quitar like" : "Dar like"}
           >
             <HeartIcon filled={post.isLiked || false} />
@@ -97,11 +92,8 @@ function PostCard({
           </span>
         </div>
 
-        {/* Caption */}
         <p className="mt-2 text-foreground">
-          <span className="font-semibold">
-            {post.user?.username || "default_user"}
-          </span>{" "}
+          <span className="font-semibold">{displayName}</span>{" "}
           <span className="text-foreground/80">{post.caption}</span>
         </p>
       </div>
@@ -110,7 +102,9 @@ function PostCard({
 }
 
 export default function Home() {
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [posts, setPosts]         = useState<Post[]>([]);
+  const [apiUsers, setApiUsers]   = useState<ApiUser[]>([]);
+  const [loading, setLoading]     = useState(true);
 
   const handleLike = (postId: number | string) => {
     setPosts((prevPosts) =>
@@ -127,34 +121,45 @@ export default function Home() {
   };
 
   useEffect(() => {
-    const fetchPosts = async () => {
-      const { data, error } = await supabase
-        .from("posts_new")
-        .select("*")
-        .order("created_at", { ascending: false });
+    const fetchAll = async () => {
+      const [{ data: postsData, error }, usersRes] = await Promise.all([
+        supabase.from("posts_new").select("*").order("created_at", { ascending: false }),
+        fetch("https://devsapihub.com/api-users").then((r) => r.json()),
+        new Promise((r) => setTimeout(r, 2000)),
+      ]);
 
-      if (error) {
-        console.error("Error al obtener los posts:", error);
-      } else {
-        setPosts(data);
-      }
+      if (error) console.error("Error al obtener los posts:", error);
+      else setPosts(postsData);
+
+      setApiUsers(usersRes);
+      setLoading(false);
     };
 
-    fetchPosts();
+    fetchAll();
   }, []);
+
+  const getUser = (index: number): ApiUser =>
+    apiUsers[index % apiUsers.length] ?? { name: "Usuario", avatar_url: "" };
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <Hearder title="Suplatzigram" />
 
-      {/* Feed de posts */}
       <main className="max-w-lg mx-auto px-4 py-6">
-        <div className="flex flex-col gap-6">
-          {posts.map((post) => (
-            <PostCard key={post.id} post={post} onLike={handleLike} />
-          ))}
-        </div>
+        {loading ? (
+          <HomeSkeleton />
+        ) : (
+          <div className="flex flex-col gap-6">
+            {posts.map((post, index) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                fallbackUser={getUser(index)}
+                onLike={handleLike}
+              />
+            ))}
+          </div>
+        )}
       </main>
     </div>
   );

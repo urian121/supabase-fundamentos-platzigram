@@ -46,7 +46,7 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card-bg border-t border-border">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card-bg">
       <div className="max-w-lg mx-auto flex items-center justify-around py-2">
         <Link
           href="/"
@@ -60,7 +60,7 @@ export default function BottomNav() {
 
         <Link
           href="/post"
-          className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-primary to-accent text-white shadow-lg hover:scale-105 transition-transform"
+          className="flex items-center justify-center w-12 h-12 rounded-full bg-linear-to-r from-primary to-accent text-white shadow-lg hover:scale-105 transition-transform"
         >
           <PlusIcon />
         </Link>

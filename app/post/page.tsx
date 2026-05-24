@@ -1,17 +1,24 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { supabase } from "../utils/client";
 import Hearder from "../components/Hearder";
+import PostSkeleton from "../components/skeletons/PostSkeleton";
+import { showToast } from "nextjs-toast-notify";
 
 export default function CreatePage() {
+  const [mounted, setMounted] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [caption, setCaption] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setMounted(true), 500);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -38,11 +45,11 @@ export default function CreatePage() {
 
     // 1️⃣ Preparar nombre del archivo
     const fileExt = file.name.split(".").pop();
-    const fileName = `${file.name}-${Date.now()}.${fileExt}`;
+    const fileName = `${Date.now()}.${fileExt}`;
     const filePath = `posts/${fileName}`;
 
     // 2️⃣ Subir al bucket "images"
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from("images")
       .upload(filePath, file, {
         cacheControl: "3600",
@@ -91,18 +98,24 @@ export default function CreatePage() {
     e.preventDefault();
 
     if (!imageFile) {
-      setMessage({ type: "error", text: "Por favor selecciona una imagen" });
+      showToast.error("Por favor selecciona una imagen");
       return;
     }
 
     setIsLoading(true);
-    setMessage(null);
 
     try {
       await uploadAndCreatePost(imageFile);
 
       // Éxito
-      setMessage({ type: "success", text: "¡Post creado exitosamente!" });
+      showToast.success("¡Post creado exitosamente!", {
+        duration: 5000,
+        progress: true,
+        position: "top-right",
+        transition: "swingInverted",
+        sound: true,
+      });
+
       setImageFile(null);
       setImagePreview(null);
       setCaption("");
@@ -110,10 +123,7 @@ export default function CreatePage() {
         fileInputRef.current.value = "";
       }
     } catch (error) {
-      setMessage({
-        type: "error",
-        text: error instanceof Error ? error.message : "Error al crear el post",
-      });
+      showToast.error(`Error al crear el post: ${error}`);
     } finally {
       setIsLoading(false);
     }
@@ -126,6 +136,9 @@ export default function CreatePage() {
 
       {/* Formulario */}
       <main className="max-w-lg mx-auto px-4 py-8">
+        {!mounted ? (
+          <PostSkeleton />
+        ) : (
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           {/* Área de carga de imagen */}
           <div className="flex flex-col gap-2">
@@ -213,24 +226,11 @@ export default function CreatePage() {
             />
           </div>
 
-          {/* Mensaje de estado */}
-          {message && (
-            <div
-              className={`px-4 py-3 rounded-xl text-sm ${
-                message.type === "success"
-                  ? "bg-green-500/10 text-green-500 border border-green-500/20"
-                  : "bg-red-500/10 text-red-500 border border-red-500/20"
-              }`}
-            >
-              {message.text}
-            </div>
-          )}
-
           {/* Botón de enviar */}
           <button
             type="submit"
             disabled={isLoading || !imageFile}
-            className="w-full py-3 px-4 rounded-xl bg-linear-to-r from-primary to-accent text-white font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full py-3 px-4 rounded-xl bg-linear-to-r from-primary to-accent text-white font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 hover:cursor-pointer"
           >
             {isLoading ? (
               <>
@@ -257,10 +257,27 @@ export default function CreatePage() {
                 Publicando...
               </>
             ) : (
-              "Publicar"
+              <>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2}
+                  stroke="currentColor"
+                  className="w-5 h-5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12zm0 0h7.5"
+                  />
+                </svg>
+                Publicar
+              </>
             )}
           </button>
         </form>
+        )}
       </main>
     </div>
   );

@@ -6,6 +6,7 @@ import { getTimeAgo } from "../utils/time";
 import { type Post } from "../mocks/posts";
 import Hearder from "../components/Hearder";
 import { supabase } from "../utils/client";
+import RankSkeleton from "../components/skeletons/RankSkeleton";
 
 function HeartIcon() {
   return (
@@ -59,7 +60,7 @@ function Modal({
         </button>
 
         {/* Header con usuario */}
-        <div className="flex items-center gap-3 p-4 border-b border-border">
+        <div className="flex items-center gap-3 p-4">
           <div className="relative w-10 h-10 rounded-full overflow-hidden ring-2 ring-primary">
             <Image
               src={post.user?.avatar || "https://xynshcnkxdliapebmyaz.supabase.co/storage/v1/object/public/images/posts/unnamed-14.jpg"}
@@ -104,16 +105,19 @@ function Modal({
 
 export default function RankPage() {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
-
   const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchPosts = async () => {
-      const { data, error } = await supabase
-        .from("posts_new")
-        .select("id, image_url, caption, likes, user_id, created_at")
-        .gt("likes", 5)
-        .order("likes", { ascending: false })
+      const [{ data, error }] = await Promise.all([
+        supabase
+          .from("posts_new")
+          .select("id, image_url, caption, likes, user_id, created_at")
+          .gt("likes", 5)
+          .order("likes", { ascending: false }),
+        new Promise((r) => setTimeout(r, 500)),
+      ]);
 
       if (error) {
         console.error("Error al obtener los posts:", error);
@@ -121,6 +125,7 @@ export default function RankPage() {
         console.log("Posts obtenidos:", data);
         setPosts(data);
       }
+      setLoading(false);
     };
 
     fetchPosts();
@@ -133,6 +138,9 @@ export default function RankPage() {
 
       {/* Grid de posts */}
       <main className="max-w-2xl mx-auto p-2">
+        {loading ? (
+          <RankSkeleton />
+        ) : (
         <div className="grid grid-cols-3 gap-1">
           {[...posts].sort((a, b) => b.likes - a.likes).map((post) => (
             <button
@@ -156,6 +164,7 @@ export default function RankPage() {
             </button>
           ))}
         </div>
+        )}
       </main>
 
       {/* Modal */}
