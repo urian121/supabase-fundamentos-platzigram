@@ -4,7 +4,7 @@ Repositorio del frontend para el **Curso de Supabase de Platzi**. Una aplicació
 
 ## Demo del Proyecto
 
-<video src="./demo.mp4" controls width="800"></video>
+<video src="demo.mp4" controls width="800"></video>
 
 ## Tecnologías
 
