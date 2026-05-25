@@ -1,7 +1,6 @@
-function PostCardSkeleton() {
+export function PostCardSkeleton() {
   return (
     <article className="bg-card-bg overflow-hidden">
-      {/* Avatar + usuario */}
       <div className="flex items-center gap-3 p-4">
         <div className="w-10 h-10 rounded-full bg-border shrink-0" />
         <div className="flex flex-col gap-2 flex-1">
@@ -9,11 +8,7 @@ function PostCardSkeleton() {
           <div className="h-2 w-16 rounded-full bg-border" />
         </div>
       </div>
-
-      {/* Imagen cuadrada */}
       <div className="w-full aspect-square bg-border" />
-
-      {/* Likes + caption */}
       <div className="p-4 flex flex-col gap-3">
         <div className="h-4 w-20 rounded-full bg-border" />
         <div className="h-3 w-full rounded-full bg-border" />
