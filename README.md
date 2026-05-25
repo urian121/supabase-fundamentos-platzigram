@@ -2,6 +2,10 @@
 
 Repositorio del frontend para el **Curso de Supabase de Platzi**. Una aplicación inspirada en Instagram construida con [Next.js](https://nextjs.org) y [Supabase](https://supabase.com) como backend.
 
+## Demo del Proyecto
+
+<video src="./demo.mp4" controls width="800"></video>
+
 ## Tecnologías
 
 - **Frontend:** Next.js
